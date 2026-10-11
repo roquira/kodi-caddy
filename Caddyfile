@@ -1,0 +1,26 @@
+{
+	admin {$KODI_CADDY_ADMIN_ADDRESS}
+	auto_https off
+}
+
+# Plain HTTP is intentional: Kodi uses this as a LAN media source.
+{$KODI_CADDY_LISTEN_ADDRESS} {
+	bind 0.0.0.0
+	root * "{$KODI_CADDY_MEDIA_ROOT}"
+
+	# Directory pages are generated from the template. Do not let Kodi or a
+	# browser reuse an older page after the template or symlink layout changes.
+	@directory_pages path */
+	header @directory_pages Cache-Control "no-store"
+
+	# Make the read-only contract explicit instead of letting the browse handler
+	# answer other HTTP methods with a directory page.
+	@not_read not method GET HEAD
+	respond @not_read 405
+
+	# This template removes ./ and normalises encoded brackets in links. Kodi's
+	# HTTP directory parser is stricter than a normal web browser.
+	file_server {
+		browse "{$KODI_CADDY_BROWSE_TEMPLATE}"
+	}
+}

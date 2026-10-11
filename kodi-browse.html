@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Media</title></head>
+<body>
+{{ $pagePath := trimPrefix "/" $.Req.URL.Path }}
+{{/* Caddy reports a directory symlink as IsDir=false. Resolve those targets
+     here so Kodi sees folder links together, before episode files. */}}
+{{ range .Items }}
+{{ $fsPath := printf "%s/%s" $pagePath .Name }}
+{{ $targetDir := .IsDir }}
+{{ if and (not $targetDir) .IsSymlink }}
+  {{ if fileExists $fsPath }}{{ $target := fileStat $fsPath }}{{ $targetDir = $target.IsDir }}{{ end }}
+{{ end }}
+{{ if $targetDir }}
+  {{ $href := trimPrefix "./" .URL }}
+  {{ if and .IsSymlink (not (hasSuffix $href "/")) }}{{ $href = printf "%s/" $href }}{{ end }}
+  {{ $label := printf "%s/" (trimSuffix "/" .Name) }}
+  <a href="{{html (replace "%5D" "]" (replace "%5B" "[" $href))}}">{{html $label}}</a><br>
+{{ end }}
+{{ end }}
+{{ range .Items }}
+{{ $fsPath := printf "%s/%s" $pagePath .Name }}
+{{ $targetDir := .IsDir }}
+{{ if and (not $targetDir) .IsSymlink }}
+  {{ if fileExists $fsPath }}{{ $target := fileStat $fsPath }}{{ $targetDir = $target.IsDir }}{{ end }}
+{{ end }}
+{{ if not $targetDir }}
+  {{ $href := trimPrefix "./" .URL }}
+  <a href="{{html (replace "%5D" "]" (replace "%5B" "[" $href))}}">{{html .Name}}</a><br>
+{{ end }}
+{{ end }}
+</body>
+</html>
